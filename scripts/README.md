@@ -15,4 +15,4 @@ There is a good [documentation](https://scvi.readthedocs.io/en/stable/index.html
 
 ## DPFE (Deep Private Feature Extraction)
 In our proposed method we use the [Deep Private-Feature Extraction](https://arxiv.org/abs/1802.03151) framework for batch-effect correction in single-cell RNA-seq data.
-In our method we treat the batch-labels as sensitive private features and minimize it's **Mutual Information** with the latent variables witch contain the biological information of single-cell data.
+In our method we treat the batch-labels as sensitive private variable and minimize it's **Mutual Information** with the latent variables containing the biological information of single-cell data.
