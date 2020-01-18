@@ -4,7 +4,7 @@ File names show both the dataset and the model for latent space inference: `Data
 
 # Datasets:
 ## scVI built-in datasets:
-scVI python package has also implemented seven built-in datasets to make it easier to reproduce results from the scVI paper:
+scVI python package includes seven built-in datasets to make it easier to reproduce results from the scVI paper. here are the two we have used:
 * **RETINA:** 27,499 mouse retinal bipolar neurons, profiled in two batches using the Drop-Seq technology
 * **PBMC:** 12,039 human peripheral blood mononuclear cells profiled with 10x
 
