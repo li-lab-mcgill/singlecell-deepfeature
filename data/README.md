@@ -51,14 +51,14 @@ dataset = RetinaDataset(save_path=save_path)
 
 [A number of other datasets](https://nbviewer.jupyter.org/github/YosefLab/scVI/blob/master/tests/notebooks/data_loading.ipynb) are also available through the `scvi` library. 
 
-## human pancreatic islet cells through 4 technologies :
-human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad` and can be read using scanpy library like before:
+## Human pancreatic islet cells through 4 technologies :
+Human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad` and can be read using scanpy library like before:
 ```python
 import scanpy as sc
 adata = sc.read_h5ad('/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad')
 ```
 ## Pre-Frontal Cortex Starmap Dataset :
- 3,722 mouse Cortex cells profiled using the STARmap technology in 3 batches. You can find more details about the data in the [original publication](https://www.ncbi.nlm.nih.gov/pubmed/29930089).
+3,722 mouse Cortex cells profiled using the STARmap technology in 3 batches. You can find more details about the data in the [original publication](https://www.ncbi.nlm.nih.gov/pubmed/29930089).
  
 The dataset can be loaded easily using the scvi library like the [RETINA dataset](#RETINA).
 ```python
