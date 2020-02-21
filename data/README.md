@@ -51,8 +51,7 @@ dataset = RetinaDataset(save_path=save_path)
 [A number of other datasets](https://nbviewer.jupyter.org/github/YosefLab/scVI/blob/master/tests/notebooks/data_loading.ipynb) are also available through the `scvi` library. 
 
 ## human pancreatic islet cells through 4 technologies :
-human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `
-`/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad` and can be read using scanpy library like before:
+human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad` and can be read using scanpy library like before:
 ```python
 import scanpy as sc
 adata = sc.read_h5ad('/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad')
