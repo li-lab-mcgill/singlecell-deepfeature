@@ -1,4 +1,5 @@
-# Datasets:
+# RAN-seq Datasets:
+
 ## Turecki Dataset:
 The data contains more than 80k single cells from 34 patients.
 
@@ -15,7 +16,7 @@ The script for loading the raw data and aggregation can be found in `project/jos
 
 
 
-## Mouse pancreas single-cell RNA-seq dataset (GSE84133)
+## Mouse pancreas single-cell RNA-seq dataset (GSE84133):
 The 1,886 cells in 13 cell types after the exclusion of hybrid cells. The dataset is available in [GSE84133](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE84133)
 
 In python you can download the datasets from the GEO website using the [GEOparse](https://pypi.org/project/GEOparse/) package:
