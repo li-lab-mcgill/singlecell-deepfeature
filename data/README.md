@@ -57,9 +57,9 @@ import scanpy as sc
 adata = sc.read_h5ad('/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad')
 ```
 ## Pre-Frontal Cortex Starmap Dataset :
- 3,722 mouse Cortex cells profiled using the STARmap technology in 3 batches. You can find more details about the data in the [original publication](https://www.ncbi.nlm.nih.gov/pubmed/29930089)
+ 3,722 mouse Cortex cells profiled using the STARmap technology in 3 batches. You can find more details about the data in the [original publication](https://www.ncbi.nlm.nih.gov/pubmed/29930089).
  
-The dataset can be loaded easily using the scvi library like the [RETINA dataset](#RETINA)
+The dataset can be loaded easily using the scvi library like the [RETINA dataset](#RETINA).
 ```python
 from scvi.dataset import PreFrontalCortexStarmapDataset
 dataset = PreFrontalCortexStarmapDataset(save_path=save_path)
