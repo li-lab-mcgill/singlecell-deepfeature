@@ -1,6 +1,6 @@
 # RNA-Seq Datasets:
 
-## Turecki Dataset:
+## MDD Brain Cells Dataset:
 The data contains more than 80k single cells from 34 patients.
 
 The raw files for all patients are available in
