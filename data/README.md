@@ -1,12 +1,11 @@
 # Single-cell RNA-Seq Datasets:
 
-## MDD Brain Cells Dataset:
+## Major Depression Disorder single-nucleus RNA-seq data:
 The data contains more than 80k single cells from 34 patients.
 
-The raw files for all patients are available in
-`/home/mcb/li_lab/jszymb/data/turecki_suicide/data/`
+The raw data are at GEO (Accession Number: GSE144136)
 
-The raw files are aggregated (except for 2 paitents) and stored as a single ready-to-use `.h5ad` format file available in `/home/mcb/users/mbahra5/project/data/turecki_types_all.h5ad` which can easily be read using the [scanpy](https://anndata.readthedocs.io/en/stable/) library like this:
+The raw files are aggregated (except for 2 paitents) and stored as a single ready-to-use `.h5ad` format file available in `turecki_types_all.h5ad`, which can easily be read using the [scanpy](https://anndata.readthedocs.io/en/stable/) library like this:
 
 ```python
 import scanpy as sc
