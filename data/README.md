@@ -39,15 +39,6 @@ df = pd.concat(data)
 
 Other Datasets from GEO can be downloaded similarly.
 
-## RETINA:
-27,499 mouse retinal bipolar neurons, profiled in two batches using the Drop-Seq technology
-
-The dataset can be downloaded and manipulated through the [scvi](https://github.com/YosefLab/scVI) python library:
-```python
-from scvi.dataset import RetinaDataset
-save_path = "where you wan to save the data"
-dataset = RetinaDataset(save_path=save_path)
-```
 
 [A number of other datasets](https://nbviewer.jupyter.org/github/YosefLab/scVI/blob/master/tests/notebooks/data_loading.ipynb) are also available through the `scvi` library. 
 
@@ -57,6 +48,8 @@ Human pancreatic islet cell datasets produced across four technologies, CelSeq (
 import scanpy as sc
 adata = sc.read_h5ad('/home/mcb/users/mbahra5/project/data/panc8/panc4tech.h5ad')
 ```
+
+<!---
 ## Pre-Frontal Cortex Starmap Dataset :
 3,722 mouse Cortex cells profiled using the STARmap technology in 3 batches. You can find more details about the data in the [original publication](https://www.ncbi.nlm.nih.gov/pubmed/29930089).
  
@@ -65,3 +58,37 @@ The dataset can be loaded easily using the scvi library like the [RETINA dataset
 from scvi.dataset import PreFrontalCortexStarmapDataset
 dataset = PreFrontalCortexStarmapDataset(save_path=save_path)
 ```
+-->
+
+<!---
+## RETINA:
+27,499 mouse retinal bipolar neurons, profiled in two batches using the Drop-Seq technology
+
+The dataset can be downloaded and manipulated through the [scvi](https://github.com/YosefLab/scVI) python library:
+```python
+from scvi.dataset import RetinaDataset
+save_path = "where you wan to save the data"
+dataset = RetinaDataset(save_path=save_path)
+```
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
