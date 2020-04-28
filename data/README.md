@@ -1,4 +1,4 @@
-# RNA-Seq Datasets:
+# Single-cell RNA-Seq Datasets:
 
 ## MDD Brain Cells Dataset:
 The data contains more than 80k single cells from 34 patients.
