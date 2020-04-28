@@ -5,7 +5,7 @@ The data contains more than 80k single cells from 34 patients.
 
 The raw data are at GEO (Accession Number: GSE144136)
 
-The raw files are aggregated (except for 2 paitents) and stored as a single ready-to-use `.h5ad` format file available in `turecki_types_all.h5ad` in [here](https://drive.google.com/drive/folders/1zGxm2ugT0N4Vq5SZXWr552OcZ-9Ybif4?usp=sharing), which can easily be read using the [scanpy](https://anndata.readthedocs.io/en/stable/) library like this:
+The raw files are aggregated (except for 2 paitents) and stored as a single ready-to-use `.h5ad` format file available in `turecki_types_all.h5ad` in [here](https://drive.google.com/file/d/1RbWstc5KS4V3PK76ZJA9lQVNpBO9CBP-/view?usp=sharing), which can easily be read using the [scanpy](https://anndata.readthedocs.io/en/stable/) library like this:
 
 ```python
 import scanpy as sc
