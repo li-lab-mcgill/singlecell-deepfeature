@@ -42,7 +42,7 @@ Other Datasets from GEO can be downloaded similarly.
 [A number of other datasets](https://nbviewer.jupyter.org/github/YosefLab/scVI/blob/master/tests/notebooks/data_loading.ipynb) are also available through the `scvi` library. 
 
 ## Human pancreatic islet cells through 4 technologies :
-Human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `panc4tech.h5ad` saved in [here](https://drive.google.com/drive/folders/1zGxm2ugT0N4Vq5SZXWr552OcZ-9Ybif4?usp=sharing) and can be read using scanpy library like before:
+Human pancreatic islet cell datasets produced across four technologies, CelSeq (GSE81076) CelSeq2 (GSE85241), Fluidigm C1 (GSE86469), and SMART-Seq2 (E-MTAB-5061) are all aggregated and stored in `panc4tech.h5ad` saved in [here](https://drive.google.com/file/d/1hLvJMY6xBg7XJ7Pd0vd2ZpbIktUgmvUV/view?usp=sharing) and can be read using scanpy library like before:
 ```python
 import scanpy as sc
 adata = sc.read_h5ad('panc4tech.h5ad')
