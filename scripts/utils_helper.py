@@ -56,33 +56,6 @@ def clustering_scores(n_labels, labels, latent, prediction_algorithm="knn"):
 #         return asw_score, nmi_score, ari_score, uca_score
         return ari_score
 
-
-
-from keras.layers import Input, Dense
-from keras.models import Model
-from keras.utils import to_categorical
-
-def classification_acc_measure(latent, labels):
-    
-    cell_types = pd.Series(labels).unique()
-    latent_dim = latent.shape[1]
-    
-    #Model
-    inputs = Input(shape=(latent_dim,))
-    # x = Dense(10, activation='relu')(inputs)
-    x = Dense(len(cell_types), activation='softmax')(inputs)
-
-    model = Model(inputs=inputs, outputs=x)
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    
-    
-    labels = to_categorical(labels,num_classes=len(cell_types))
-    history = model.fit(latent, labels, epochs=20, validation_split=0.1)
-    
-    train_acc = history.history['acc']
-    val_acc = history.history['val_acc']
-
-    return val_acc[-1]
     
     
     
