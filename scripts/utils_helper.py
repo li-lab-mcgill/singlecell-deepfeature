@@ -163,7 +163,7 @@ class VAE(nn.Module):
 
         reconst_loss = self.get_reconstruction_loss(x, px_rate, px_r)
 
-        return reconst_loss , kl_divergence
+        return reconst_loss , kl_divergence, z
 #         return reconst_loss , 0.0, z  # kl_divergence / x.size(1)
 
 
@@ -431,7 +431,7 @@ class GANTrainer(UnsupervisedTrainer):
                     ###########################                    
                     self.model.zero_grad()
                         
-                    reconst_loss, kl_divergence, z = self.model(sample_batch, local_l_mean, local_l_var, batch_index)
+                    reconst_loss, kl_divergence, z = self.model(sample_batch, batch_index)
                     loss = torch.mean(reconst_loss + self.kl_weight * kl_divergence)
                     
                     vae_loss_list_epoch.append(loss.item())
