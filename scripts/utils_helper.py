@@ -19,11 +19,14 @@ class GeneDataset(Dataset):
         return self.X.shape[0]
     
     def __getitem__(self, index):
-        X = self.X[index].toarray().squeeze()
+        if type(self.X) is np.ndarray:
+            X = self.X[index].squeeze()    
+        else:
+            X = self.X[index].toarray().squeeze()
         label = self.label.iloc[index]
         batch = self.batch.iloc[index]
         batch_cont = self.batch_cont.iloc[index]
-            
+
         return X, label, batch, batch_cont
     
 def entropy_batch_mixing(latent_space, batches, n_neighbors=50, n_pools=50, n_samples_per_pool=100):
@@ -520,6 +523,3 @@ class GANTrainer():
         self.model.eval()
         self.disc.eval()
         return vae_loss_list, D_loss_list, E_loss_list
-
-
-
