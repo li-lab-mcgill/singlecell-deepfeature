@@ -3,7 +3,29 @@ import pandas as pd
 import scipy
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import normalized_mutual_info_score as NMI
+from torch.utils.data import DataLoader, Dataset
 
+class GeneDataset(Dataset):    
+    def __init__(self, X, labels, batch, batch_cont):
+        self.X = X
+        self.label = labels
+        self.batch = batch
+        self.batch_cont = batch_cont
+        self.nb_genes = X.shape[1]
+        self.n_batches = len(batch.unique())
+        self.n_labels = len(labels.unique())
+        
+    def __len__(self):
+        return self.X.shape[0]
+    
+    def __getitem__(self, index):
+        X = self.X[index].toarray().squeeze()
+        label = self.label.iloc[index]
+        batch = self.batch.iloc[index]
+        batch_cont = self.batch_cont.iloc[index]
+            
+        return X, label, batch, batch_cont
+    
 def entropy_batch_mixing(latent_space, batches, n_neighbors=50, n_pools=50, n_samples_per_pool=100):
     
     def entropy(hist_data):
@@ -45,24 +67,15 @@ def clustering_scores(n_labels, labels, latent, prediction_algorithm="knn"):
             gmm.fit(latent)
             labels_pred = gmm.predict(latent)
 
-#         asw_score = silhouette_score(latent, labels)
-#         nmi_score = NMI(labels, labels_pred)
         ari_score = ARI(labels, labels_pred)
-#         uca_score = unsupervised_clustering_accuracy(labels, labels_pred)[0]
-#         logger.debug(
-#             "Clustering Scores:\nSilhouette: %.4f\nNMI: %.4f\nARI: %.4f\nUCA: %.4f"
-#             % (asw_score, nmi_score, ari_score, uca_score)
-#         )
-#         return asw_score, nmi_score, ari_score, uca_score
         return ari_score
 
+
+
     
-    
-    
-    
-    
-    
-    
+# -*- coding: utf-8 -*-
+"""Main module."""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -72,100 +85,6 @@ from scvi.models.log_likelihood import log_zinb_positive, log_nb_positive
 from scvi.models.utils import one_hot
 
 torch.backends.cudnn.benchmark = True
-
-
-# VAE model
-class VAE(nn.Module):
-    def __init__(
-        self,
-        n_input: int,
-        n_batch: int = 0,
-        n_labels: int = 0,
-        n_hidden: int = 128,
-        n_latent: int = 10,
-        n_layers: int = 1,
-        dropout_rate: float = 0.1,
-    ):
-        super().__init__()
-        self.n_latent = n_latent
-        # Automatically deactivate if useless
-        self.n_batch = n_batch
-        self.n_labels = n_labels
-
-        self.z_encoder = Encoder(
-            n_input,
-            n_latent,
-            n_layers=n_layers,
-            n_hidden=n_hidden,
-            dropout_rate=dropout_rate,
-        )
-
-
-        self.decoder = Decoder(
-            n_latent,
-            n_input,
-            n_cat_list=[n_batch],
-            n_layers=n_layers,
-            n_hidden=n_hidden,
-        )
-        
-
-    def get_latents(self, x, y=None):
-        return [self.sample_from_posterior_z(x, y)]
-
-    def sample_from_posterior_z(self, x, y=None, give_mean=False):
-        
-        x = torch.log(1 + x)
-        qz_m, qz_v, z = self.z_encoder(x, y) 
-        if give_mean:
-            z = qz_m
-        return z
-
-
-    def get_reconstruction_loss(self, x, px_rate, px_r):
-        reconst_loss = -log_nb_positive(x, px_rate, px_r)
-        return reconst_loss
-
-    def inference(self, x, batch_index=None, y=None):
-        x_ = x
-        
-        x_ = torch.log(1 + x_)
-
-        qz_m, qz_v, z = self.z_encoder(x_, y)
-        px_r, px_rate = self.decoder(z, batch_index, y)
-        px_r = torch.exp(px_r)
-
-        return dict(
-            px_r=px_r,
-            px_rate=px_rate,
-            qz_m=qz_m,
-            qz_v=qz_v,
-            z=z,
-        )
-
-    def forward(self, x, batch_index=None, y=None):
-        # Parameters for z latent distribution
-        outputs = self.inference(x, batch_index, y)
-        qz_m = outputs["qz_m"]
-        qz_v = outputs["qz_v"]
-        px_rate = outputs["px_rate"]
-        px_r = outputs["px_r"]
-        z = outputs['z']
-        
-        # KL Divergence
-        mean = torch.zeros_like(qz_m)
-        scale = torch.ones_like(qz_v)
-
-        kl_divergence_z = kl(Normal(qz_m, torch.sqrt(qz_v)), Normal(mean, scale)).sum(
-            dim=1
-        )
-        kl_divergence = kl_divergence_z
-
-        reconst_loss = self.get_reconstruction_loss(x, px_rate, px_r)
-
-        return reconst_loss , kl_divergence, z
-#         return reconst_loss , 0.0, z  # kl_divergence / x.size(1)
-
 
 
 
@@ -227,14 +146,15 @@ class FCLayers(nn.Module):
         )
 
     def forward(self, x: torch.Tensor, *cat_list: int, instance_id: int = 0):
-        one_hot_cat_list = [] 
-        
+        one_hot_cat_list = []  # for generality in this list many indices useless.
+        assert len(self.n_cat_list) <= len(cat_list), "nb. categorical args provided doesn't match init. params."
         for n_cat, cat in zip(self.n_cat_list, cat_list):
-            if n_cat > 1:  
+            assert not (n_cat and cat is None), "cat not provided while n_cat != 0 in init. params."
+            if n_cat > 1:  # n_cat = 1 will be ignored - no additional information
                 if cat.size(1) != n_cat:
                     one_hot_cat = one_hot(cat, n_cat)
                 else:
-                    one_hot_cat = cat 
+                    one_hot_cat = cat  # cat has already been one_hot encoded
                 one_hot_cat_list += [one_hot_cat]
         for layers in self.fc_layers:
             for layer in layers:
@@ -260,9 +180,8 @@ class FCLayers(nn.Module):
         return x
 
 
-
+# Encoder
 class Encoder(nn.Module):
-
     def __init__(
         self,
         n_input: int,
@@ -286,7 +205,7 @@ class Encoder(nn.Module):
         self.var_encoder = nn.Linear(n_hidden, n_output)
 
     def forward(self, x: torch.Tensor, *cat_list: int):
-        
+        # Parameters for latent distribution
         q = self.encoder(x, *cat_list)
         q_m = self.mean_encoder(q)
         q_v = torch.exp(self.var_encoder(q)) + 1e-4
@@ -294,7 +213,7 @@ class Encoder(nn.Module):
         return q_m, q_v, latent
 
 
-
+# Decoder
 class Decoder(nn.Module):
 
     def __init__(
@@ -315,21 +234,148 @@ class Decoder(nn.Module):
             dropout_rate=0,
         )
 
-        self.px_rate_decoder = nn.Sequential(
-            nn.Linear(n_hidden, n_output), nn.ReLU()# nn.Softmax(dim=-1)
+        # mean gamma
+        self.px_scale_decoder = nn.Sequential(
+            nn.Linear(n_hidden, n_output), 
         )
 
+        # dispersion: here we only deal with gene-cell dispersion case
         self.px_r_decoder = nn.Linear(n_hidden, n_output)
 
-
-    def forward(self, z: torch.Tensor, *cat_list: int):
+    def forward(self, dispersion: str, z: torch.Tensor, *cat_list: int):
+        # The decoder returns values for the parameters of the ZINB distribution
         px = self.px_decoder(z, *cat_list)
-        px_rate = self.px_rate_decoder(px)
-        px_r = self.px_r_decoder(px)
+        px_scale = self.px_scale_decoder(px)        
+        # Clamp to high value: exp(12) ~ 160000 to avoid nans (computational stability)
+        px_rate = px_scale  # torch.clamp( , max=12)
+        px_r = self.px_r_decoder(px) if dispersion == "gene-cell" else None
         return px_r, px_rate
 
 
+    
+# VAE model
+class VAE(nn.Module):
 
+    def __init__(
+        self,
+        n_input: int,
+        n_batch: int = 0,
+        n_labels: int = 0,
+        n_hidden: int = 128,
+        n_latent: int = 10,
+        n_layers: int = 1,
+        dropout_rate: float = 0.1,
+        dispersion: str = "gene",
+        log_variational: bool = True,
+        reconstruction_loss: str = "nb",
+        kl_weight = 0.1,
+    ):
+        super().__init__()
+        self.dispersion = dispersion
+        self.n_latent = n_latent
+        self.log_variational = log_variational
+        self.reconstruction_loss = reconstruction_loss
+        # Automatically deactivate if useless
+        self.n_batch = n_batch
+        self.n_labels = n_labels
+        self.kl_weight = kl_weight
+
+        if self.dispersion == "gene":
+            self.px_r = torch.nn.Parameter(torch.randn(n_input))
+        elif self.dispersion == "gene-batch":
+            self.px_r = torch.nn.Parameter(torch.randn(n_input, n_batch))
+        elif self.dispersion == "gene-label":
+            self.px_r = torch.nn.Parameter(torch.randn(n_input, n_labels))
+        else:  # gene-cell
+            pass
+
+        # z encoder goes from the n_input-dimensional data to an n_latent-d
+        # latent space representation
+        self.z_encoder = Encoder(
+            n_input,
+            n_latent,
+            n_layers=n_layers,
+            n_hidden=n_hidden,
+            dropout_rate=dropout_rate,
+        )
+
+        # decoder goes from n_latent-dimensional space to n_input-d data
+        self.decoder = Decoder(
+            n_latent,
+            n_input,
+            n_cat_list=[n_batch],
+            n_layers=n_layers,
+            n_hidden=n_hidden,
+        )
+        
+
+    def sample_from_posterior_z(self, x, y=None, give_mean=False):
+        if self.log_variational:
+            x = torch.log(1 + x)
+        qz_m, qz_v, z = self.z_encoder(x, y)  # y only used in VAEC
+        if give_mean:
+            z = qz_m
+        return z
+
+
+    def get_reconstruction_loss(self, x, px_rate, px_r):
+        # Reconstruction Loss
+        if self.reconstruction_loss == "nb":
+            reconst_loss = -log_nb_positive(x, px_rate, px_r)
+        elif self.reconstruction_loss == "mse":
+            x_ = x
+            if self.log_variational:
+                x_ = torch.log(1 + x_)
+
+            reconst_loss = F.mse_loss(px_rate, x_)
+        return reconst_loss
+
+    def inference(self, x, batch_index=None, y=None, n_samples=1):
+        x_ = x
+        if self.log_variational:
+            x_ = torch.log(1 + x_)
+
+        # Sampling
+        qz_m, qz_v, z = self.z_encoder(x_, y)
+        px_r, px_rate = self.decoder(self.dispersion, z, batch_index, y)
+        
+        if self.dispersion == "gene-label":
+            px_r = F.linear(one_hot(y, self.n_labels), self.px_r)  # px_r gets transposed - last dimension is nb genes
+        elif self.dispersion == "gene-batch":
+            px_r = F.linear(one_hot(batch_index, self.n_batch), self.px_r)
+        elif self.dispersion == "gene":
+            px_r = self.px_r
+        px_rate = torch.exp(px_rate)
+        px_r = torch.exp(px_r)
+
+        return dict(            
+            px_r=px_r,
+            px_rate=px_rate,
+            qz_m=qz_m,
+            qz_v=qz_v,
+            z=z,
+        )
+
+    def forward(self, x, batch_index=None, y=None):
+
+        # Parameters for z latent distribution
+        outputs = self.inference(x, batch_index, y)
+        qz_m = outputs["qz_m"]
+        qz_v = outputs["qz_v"]
+        px_rate = outputs["px_rate"]
+        px_r = outputs["px_r"]
+        z = outputs['z']
+        
+        # KL Divergence
+        mean = torch.zeros_like(qz_m)
+        scale = torch.ones_like(qz_v)
+
+        kl_divergence_z = kl(Normal(qz_m, torch.sqrt(qz_v)), Normal(mean, scale)).sum(dim=1)
+        kl_divergence = kl_divergence_z
+
+        reconst_loss = self.get_reconstruction_loss(x, px_rate, px_r)
+
+        return reconst_loss , kl_divergence, z  
 
 from torch import nn as nn
 class Discriminator(nn.Module):
@@ -362,8 +408,7 @@ class Regressor(nn.Module):
             modules.append(nn.ReLU())
             last_layer_size = l
         
-        modules.append(nn.Linear(last_layer_size, 1)) # changed
-#         modules.append(nn.LogSoftmax(dim=1))
+        modules.append(nn.Linear(last_layer_size, 1)) 
         self.main = nn.Sequential(*modules)
         
     def forward(self, input):
@@ -378,22 +423,30 @@ from tqdm import trange
 from scvi.inference.posterior import Posterior
 logger = logging.getLogger(__name__)
 
-class GANTrainer(UnsupervisedTrainer):
-    def __init__(
-        self,
-        model,
-        disc,
-        gene_dataset,
-        train_size, test_size,
-        **kwargs
-    ):
+
+class GANTrainer():
+    def __init__(self, batch_type, model, disc, dataset, device, batch_size=128):
+        self.batch_type = batch_type # 'discrete' or 'continuous'
+        self.model = model
         self.disc = disc
-                 
-        super().__init__(model, gene_dataset, train_size=train_size, test_size=test_size, **kwargs)
-        if type(self) is GANTrainer:
-            self.train_set, self.test_set, self.validation_set = self.train_test_validation(
-                model, gene_dataset, train_size, test_size
-            )
+        self.dataset = dataset
+        self.device = device
+        self.dataset_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+    
+    def get_latent(self, give_mean=True):
+        latent = []
+        batch = []
+        labels = []
+        for sample_batch, label, batch_index, batch_cont in self.dataset_loader:
+            sample_batch = sample_batch.to(self.device)
+            latent += [self.model.sample_from_posterior_z(sample_batch, give_mean=give_mean)]
+            batch += [batch_index]
+            labels += [label]
+        latent = torch.cat(latent)
+        batch = torch.cat(batch).reshape((-1,1))
+        labels = torch.cat(labels)
+        return latent, labels, batch
+    
         
     def train(self, n_epochs=20, lr=1e-3, eps=0.01, params=None, enc_lr=1e-3, disc_lr=1e-3):
         begin = time.time()
@@ -403,37 +456,36 @@ class GANTrainer(UnsupervisedTrainer):
         if params is None:
             params = filter(lambda p: p.requires_grad, self.model.parameters())
 
-        optimizer = self.optimizer = torch.optim.Adam(params, lr=lr, eps=eps, weight_decay=self.weight_decay)
-        optimizerE = self.optimizerE = torch.optim.Adam(self.model.z_encoder.parameters(), lr = enc_lr, weight_decay=self.weight_decay)
-        optimizerD = self.optimizerD = torch.optim.Adam(self.disc.parameters(), lr = disc_lr, weight_decay=self.weight_decay)
+        optimizer = self.optimizer = torch.optim.Adam(params, lr=lr, eps=eps)
+        optimizerE = self.optimizerE = torch.optim.Adam(self.model.z_encoder.parameters(), lr = enc_lr)
+        optimizerD = self.optimizerD = torch.optim.Adam(self.disc.parameters(), lr = disc_lr)
+        
         
         self.n_epochs = n_epochs
-        nll_loss = nn.NLLLoss(reduction='none') 
+
+        nll_loss = nn.NLLLoss(reduction='none')
         kl_loss = nn.KLDivLoss()
         mse_loss = nn.MSELoss()
 
-        with trange(n_epochs, desc="training", file=sys.stdout, disable=not self.show_progbar) as pbar:
+        with trange(n_epochs, desc="training", file=sys.stdout) as pbar:
             vae_loss_list, E_loss_list, D_loss_list = [], [], []
             for self.epoch in pbar:
                 vae_loss_list_epoch, E_loss_list_epoch, D_loss_list_epoch = [], [], []
                 
                 pbar.update(1)
-                self.on_epoch_begin()
-
     
-                for tensors_list in self.data_loaders_loop():
-                    if tensors_list[0][0].shape[0] < 3:
-                        continue
-                    
-                    sample_batch, local_l_mean, local_l_var, batch_index, _ = tensors_list[0]  
+                for sample_batch, _, batch_dis, batch_cont in self.dataset_loader:                    
+
+                    batch_dis = batch_dis.reshape((-1,1))
+                    sample_batch = sample_batch.to(self.device)
+                    batch_dis = batch_dis.to(self.device)
+                    batch_cont = batch_cont.to(self.device)
                     ############################
                     # (1) Update VAE network
                     ###########################                    
                     self.model.zero_grad()
-                        
-                    reconst_loss, kl_divergence, z = self.model(sample_batch, batch_index)
-                    loss = torch.mean(reconst_loss + self.kl_weight * kl_divergence)
-                    
+                    reconst_loss, kl_divergence, z = self.model(sample_batch, batch_dis)
+                    loss = torch.mean(reconst_loss + self.model.kl_weight * kl_divergence)
                     vae_loss_list_epoch.append(loss.item())
                     loss.backward(retain_graph=True)
                     optimizer.step()
@@ -442,11 +494,13 @@ class GANTrainer(UnsupervisedTrainer):
                     ###########################     
                     for disc_iter in range(10):
                         self.disc.zero_grad()
-
                         batch_pred = self.disc(z)
-#                         D_loss = nll_loss(batch_pred, batch_index.view(-1)) 
-#                         D_loss = torch.mean(D_loss) # todo
-                        D_loss = mse_loss(batch_pred, batch_index.view(-1))
+                        if self.batch_type is 'continuous':
+                            D_loss = mse_loss(batch_pred.squeeze(), batch_cont)
+                        elif self.batch_type is 'discrete':
+                            D_loss = nll_loss(batch_pred, batch_dis.view(-1))
+                            D_loss = torch.mean(D_loss) 
+                            
                         D_loss_list_epoch.append(D_loss.item())
                         D_loss.backward(retain_graph=True)
                         optimizerD.step()
@@ -455,7 +509,6 @@ class GANTrainer(UnsupervisedTrainer):
                     ########################### 
                     self.model.z_encoder.zero_grad()
                     E_loss = -1 * D_loss
-
                     E_loss_list_epoch.append(E_loss.item())
                     E_loss.backward(retain_graph=True)
                     optimizerE.step()
@@ -463,98 +516,10 @@ class GANTrainer(UnsupervisedTrainer):
                 vae_loss_list.append(sum(vae_loss_list_epoch)/len(vae_loss_list_epoch))
                 D_loss_list.append(sum(D_loss_list_epoch)/len(D_loss_list_epoch))
                 E_loss_list.append(sum(E_loss_list_epoch)/len(E_loss_list_epoch))
-
-
+        
         self.model.eval()
+        self.disc.eval()
         return vae_loss_list, D_loss_list, E_loss_list
 
-    
-import logging
-import operator
-import os
-from functools import reduce
-
-import anndata
-import numpy as np
-import pandas as pd
-from scipy.sparse import csr_matrix
-
-from scvi.dataset.dataset import DownloadableDataset, GeneExpressionDataset
-
-logger = logging.getLogger(__name__)
 
 
-class AnnDatasetFromAnnData(GeneExpressionDataset):
-    """Forms a ``GeneExpressionDataset`` from a ``anndata.AnnData`` object.
-
-    :param ad: ``anndata.AnnData`` instance.
-    """
-
-    def __init__(self, ad: anndata.AnnData):
-        super().__init__()
-        (
-            X,
-            batch_indices,
-            labels,
-            gene_names,
-            cell_types,
-            self.obs,
-            self.obsm,
-            self.var,
-            self.varm,
-            self.uns,
-        ) = extract_data_from_anndata(ad)
-        
-        
-        self.populate_from_data(
-            X=X,
-            batch_indices=batch_indices,
-            gene_names=gene_names,
-            cell_types=cell_types,
-            labels = labels
-        )
-        
-        self.filter_cells_by_count()
-        
-
-def extract_data_from_anndata(ad: anndata.AnnData):
-    data, labels, batch_indices, gene_names, cell_types = None, None, None, None, None
-
-    # treat all possible cases according to anndata doc
-    if isinstance(ad.X, np.ndarray):
-        data = ad.X.copy()
-    if isinstance(ad.X, pd.DataFrame):
-        data = ad.X.values
-    if isinstance(ad.X, csr_matrix):
-        # keep sparsity above 1 Gb in dense form
-        if reduce(operator.mul, ad.X.shape) * ad.X.dtype.itemsize < 1e9:
-            logger.info("Dense size under 1Gb, casting to dense format (np.ndarray).")
-            data = ad.X.toarray()
-        else:
-            data = ad.X.copy()
-
-    gene_names = np.asarray(ad.var.index.values, dtype=str)
-
-    if "batch_indices" in ad.obs.columns:
-        batch_indices = ad.obs["batch_indices"].values
-
-    if "cell_types" in ad.obs.columns:
-        cell_types = ad.obs["cell_types"]
-        labels = cell_types.rank(method="dense").values.astype("int")
-        cell_types = cell_types.drop_duplicates().values.astype("str")
-
-    if "labels" in ad.obs.columns:
-        labels = ad.obs["labels"]
-
-    return (
-        data,
-        batch_indices,
-        labels,
-        gene_names,
-        cell_types,
-        ad.obs,
-        ad.obsm,
-        ad.var,
-        ad.varm,
-        ad.uns,
-    )
